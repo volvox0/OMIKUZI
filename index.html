@@ -3,237 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>究極・おみくじアプリ</title>
+    <title>学生運勢診断 2026</title>
     <style>
         :root {
-            --primary-bg: #FF3CAC;
-            --gradient: linear-gradient(225deg, #FF3CAC 0%, #784BA0 50%, #2B86C5 100%);
-            --highlight: #FFFF00;
+            --bg-color: #f0f2f5;
         }
 
         body {
-            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
-            background: var(--gradient);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            transition: background-color 0.5s ease;
             margin: 0;
-            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            width: 90%;
-            max-width: 450px;
-            border-radius: 25px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            text-align: center;
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             overflow: hidden;
-            position: relative;
+            text-align: center;
+            padding-bottom: 20px;
         }
 
-        /* アニメーション：おみくじを引く時の揺れ */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            100% { transform: translate(1px, 1px) rotate(0deg); }
-        }
-        .shaking { animation: shake 0.5s infinite; }
-
-        h1 { color: #E91E63; font-size: 1.8rem; margin-top: 0; }
-
-        /* 結果表示エリア */
-        #result { display: none; animation: fadeInUp 0.8s ease-out; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .luck-badge {
-            display: inline-block;
-            padding: 5px 20px;
-            font-size: 2.5rem;
-            font-weight: 900;
-            background-color: var(--highlight); /* 強調バックカラー */
-            border-radius: 10px;
-            margin: 10px 0;
+        .result-section {
+            display: none;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        .human-img {
+        /* 運勢画像 */
+        .fortune-img {
             width: 100%;
-            height: 250px;
+            height: 200px;
             object-fit: cover;
-            border-radius: 15px;
-            border: 5px solid #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        /* 運勢スコアボード */
-        .score-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .score-item {
-            background: #f0f0f0;
-            padding: 10px;
+        .luck-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 10px 0;
+            color: #333;
+            background: #ffff00; /* 強調バックカラー */
+            display: inline-block;
+            padding: 0 20px;
             border-radius: 10px;
         }
-        .score-val { font-weight: bold; font-size: 1.2rem; color: #d32f2f; }
-        
-        .total-score {
-            font-size: 1.5rem;
-            background: #333;
-            color: #fff;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
-        }
 
-        .advice-text {
-            background: #fff3e0;
-            padding: 15px;
-            border-left: 5px solid #ff9800;
-            margin: 20px 0;
-            text-align: left;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .lucky-info {
+        /* スコア表示 */
+        .scores {
             display: flex;
             justify-content: space-around;
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 15px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .score-item { flex: 1; }
+        .score-label { font-size: 0.8rem; color: #666; }
+        .score-num { font-size: 1.5rem; font-weight: bold; color: #d32f2f; }
+        .total-score {
+            font-size: 1.2rem;
             font-weight: bold;
+            background: #333;
+            color: white;
+            padding: 10px;
+            margin: 0 20px;
+            border-radius: 10px;
         }
 
-        button {
-            background: #E91E63;
+        /* コメントエリア */
+        .comment-box {
+            padding: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #444;
+            min-height: 80px;
+        }
+
+        /* ラッキーアイテム・カラー */
+        .lucky-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .lucky-chip {
+            padding: 8px 15px;
+            border-radius: 50px;
+            background: #eee;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* ボタン */
+        .btn {
+            background: #d32f2f;
             color: white;
             border: none;
             padding: 15px 40px;
             font-size: 1.2rem;
-            font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 5px 0 #ad1457;
-            transition: 0.2s;
-            margin-top: 20px;
+            transition: 0.3s;
+            font-weight: bold;
         }
-        button:hover { background: #ff4081; transform: translateY(-2px); }
-        button:active { transform: translateY(3px); box-shadow: none; }
+        .btn:hover { opacity: 0.8; transform: scale(1.05); }
+
+        /* 履歴セクション */
+        .history-section {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 30px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 15px;
+            padding: 15px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-<div class="card" id="main-card">
-    <h1>✨ 運勢診断 2026 ✨</h1>
-    
-    <div id="setup-view">
-        <p>あなたの今日の運命を<br>APIがリアルタイム解析します</p>
-        <div style="font-size: 5rem;">🔮</div>
+<div class="container">
+    <div id="welcome-view">
+        <h1 style="margin-top:40px;">学生運勢診断</h1>
+        <p>あなたの今日の運勢をチェック！</p>
+        <div style="font-size: 5rem; margin: 20px;">🎒</div>
     </div>
 
-    <div id="result">
-        <img id="human-img" class="human-img" src="" alt="Fortune Face">
+    <div id="result-view" class="result-section">
+        <img id="res-img" class="fortune-img" src="" alt="fortune">
         
-        <div><span class="luck-badge" id="luck-text">--</span></div>
+        <div><span id="res-luck" class="luck-title">--</span></div>
 
-        <div class="score-container">
-            <div class="score-item">健康運 <div id="s-health" class="score-val">0</div></div>
-            <div class="score-item">恋愛運 <div id="s-love" class="score-val">0</div></div>
-            <div class="score-item">学業運 <div id="s-study" class="score-val">0</div></div>
-            <div class="score-item">総合レベル <div id="s-total" class="score-val">0</div></div>
+        <div class="scores">
+            <div class="score-item"><div class="score-label">恋愛</div><div id="res-love" class="score-num">0</div></div>
+            <div class="score-item"><div class="score-label">学問</div><div id="res-study" class="score-num">0</div></div>
+            <div class="score-item"><div class="score-label">健康</div><div id="res-health" class="score-num">0</div></div>
         </div>
 
-        <div class="total-score">累計点数: <span id="total-points">0</span> pt</div>
+        <div class="total-score">合計点: <span id="res-total">0</span> / 300</div>
 
-        <div class="advice-text">
-            <strong>【総合アドバイス】</strong><br>
-            <span id="advice-jp">--</span>
-        </div>
+        <div id="res-comment" class="comment-box"></div>
 
-        <div class="lucky-info">
-            <span>🎨 <span id="l-color">--</span></span>
-            <span>💎 <span id="l-item">--</span></span>
+        <div class="lucky-row">
+            <div class="lucky-chip">🎨 カラー: <span id="res-color-name">--</span></div>
+            <div class="lucky-chip">💎 アイテム: <span id="res-item">--</span></div>
         </div>
     </div>
 
-    <button id="draw-btn" onclick="startFortune()">運勢を読み込む</button>
+    <button class="btn" onclick="draw()">おみくじを引く！</button>
+</div>
+
+<div class="history-section">
+    <h3 style="margin-top:0;">📜 最近の履歴 (最大5件)</h3>
+    <div id="history-list">履歴はまだありません</div>
+    <button onclick="clearHistory()" style="margin-top:10px; font-size:0.7rem;">履歴を削除</button>
 </div>
 
 <script>
-    // 1. データ定義（日本語化・具体的表現）
-    const fortuneData = {
-        "大吉": { bright: 1, advice: "今日は最高の一日になります。迷わず進めば道は開けます！", range: [85, 100] },
-        "吉":   { bright: 0.8, advice: "着実に物事が進みます。周囲への感謝を忘れずに。", range: [70, 84] },
-        "中吉": { bright: 0.7, advice: "適度な休息が運気を呼び込みます。自分を労わって。", range: [60, 69] },
-        "小吉": { bright: 0.5, advice: "小さな幸運が重なります。落とし物にだけは注意。", range: [40, 59] },
-        "末吉": { bright: 0.4, advice: "一歩ずつ進むのが吉。焦りは禁物です。", range: [20, 39] },
-        "凶":   { bright: 0.2, advice: "無理は禁物。今日は家でゆっくりPCをいじるのが正解かも。", range: [0, 19] }
+    // --- データ定義 ---
+    const fortuneMaster = {
+        "大吉": { 
+            imgs: ["https://picsum.photos/seed/happy/500/200"],
+            comments: ["今日は無敵！テストの点も爆上がりかも！", "好きな人と目が合う確率1000%の日です。", "最高のコンディション。新しいことに挑戦しよう！", "失くしたと思っていたものが見つかる予感。", "周りのみんながあなたを助けてくれる特別な日。"]
+        },
+        "吉": { 
+            imgs: ["https://picsum.photos/seed/kichi/500/200"],
+            comments: ["安定した一日。放課後の買い食いがラッキーに。", "忘れ物に注意すれば、あとは全部うまくいきます。", "友達との会話が弾んで、絆が深まるでしょう。", "授業の内容がスッと頭に入ってくるはずです。", "早起きするとさらに運気がアップします。"]
+        },
+        "中吉": { 
+            imgs: ["https://picsum.photos/seed/mid/500/200"],
+            comments: ["普通の幸せが一番。平和な一日を過ごせそう。", "ちょっとしたサプライズがあるかもしれません。", "掃除をすると、運気がさらに良くなります。", "部活や趣味でいい結果が出る予感。", "欲しかったものが安く手に入るかも？"]
+        },
+        "小吉": { 
+            imgs: ["https://picsum.photos/seed/small/500/200"],
+            comments: ["少しずつ運気が上がっています。焦らずに。", "お菓子をシェアすると人気者になれるかも。", "聞き役に回ると、良い情報が入ってきます。", "一歩引いて周りを見るのが正解です。", "今日は早めに寝て明日に備えましょう。"]
+        },
+        "末吉": { 
+            imgs: ["https://picsum.photos/seed/end/500/200"],
+            comments: ["伸び代しかない！これからは上がるだけです。", "足元に気をつけて。階段は一段ずつ降りよう。", "深呼吸を忘れないで。落ち着けば大丈夫。", "ノートを綺麗に取ると、運気が回復します。", "派手な行動より、コツコツ進むのが吉。"]
+        },
+        "凶": { 
+            imgs: ["https://picsum.photos/seed/bad/500/200?grayscale"],
+            comments: ["今日は家でゆっくり動画でも見て過ごしましょう。", "無理は禁物。早退したいくらいの気持ちでOK。", "スマホの充電を切らさないように注意して。", "逆にここを乗り越えれば、あとは無双状態。", "今日は他人の失敗を笑わないことが大切。"]
+        }
     };
 
-    // 具体的表現のみのリスト
-    const items = ["有線マウス", "黒のノートPC", "青色の水筒", "ゲーミングチェア", "USBメモリ", "500円玉"];
-    const colors = ["ネオンブルー", "燃えるような赤", "鮮やかな黄色", "深緑", "漆黒", "純白"];
+    const studentItems = ["ワイヤレスイヤホン", "英単語帳", "モバイルバッテリー", "お気に入りのシャーペン", "学食のカレー券", "赤いバインダー", "タブレットPC", "スニーカー"];
+    const luckyColors = [
+        { name: "スカイブルー", code: "#87CEEB" },
+        { name: "サクラピンク", code: "#FFB7C5" },
+        { name: "ミントグリーン", code: "#98FB98" },
+        { name: "サンフラワーイエロー", code: "#FFD700" },
+        { name: "ミッドナイトバイオレット", code: "#4B0082" }
+    ];
 
-    async function startFortune() {
-        const btn = document.getElementById('draw-btn');
-        const card = document.getElementById('main-card');
-        const resultView = document.getElementById('result');
-        const setupView = document.getElementById('setup-view');
-
-        // アニメーション開始
-        btn.disabled = true;
-        card.classList.add('shaking');
-        setupView.innerHTML = "<p>データを照合中...</p><div style='font-size: 5rem;'>⚙️</div>";
-
-        // 2. 擬似API連携（3秒待機してAPIから取得した風に見せる）
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // 3. 抽選ロジック
-        const luckKeys = Object.keys(fortuneData);
+    // --- ロジック ---
+    function draw() {
+        const luckKeys = ["大吉", "吉", "中吉", "小吉", "末吉", "凶"];
         const luck = luckKeys[Math.floor(Math.random() * luckKeys.length)];
-        const data = fortuneData[luck];
+        const data = fortuneMaster[luck];
 
-        // 4. 個別スコア計算（各カテゴリ 10-100）
-        const sHealth = Math.floor(Math.random() * 40) + data.range[0];
-        const sLove = Math.floor(Math.random() * 40) + data.range[0];
-        const sStudy = Math.floor(Math.random() * 40) + data.range[0];
-        const totalPoints = sHealth + sLove + sStudy;
-        const avgScore = Math.floor(totalPoints / 3);
+        // 各運勢スコア
+        const love = Math.floor(Math.random() * 101);
+        const study = Math.floor(Math.random() * 101);
+        const health = Math.floor(Math.random() * 101);
+        const total = love + study + health;
 
-        // 5. 画像API連携 (Unsplashから「明るい人」「暗い人」をキーワードで取得)
-        const keyword = data.bright > 0.6 ? "happy-person" : "serious-person";
-        const imgUrl = `https://source.unsplash.com/featured/?${keyword}&${Math.random()}`;
-        // ※2026年時点でSource Unsplashが不安定な場合、別の固定URL or APIに差し替え
-        document.getElementById('human-img').src = `https://picsum.photos/seed/${Math.random()}/400/300?grayscale=${data.bright < 0.4 ? 1 : 0}`;
+        // カラー・アイテム
+        const color = luckyColors[Math.floor(Math.random() * luckyColors.length)];
+        const item = studentItems[Math.floor(Math.random() * studentItems.length)];
+        const comment = data.comments[Math.floor(Math.random() * data.comments.length)];
 
-        // 6. 画面反映
-        document.getElementById('luck-text').innerText = luck;
-        document.getElementById('s-health').innerText = Math.min(100, sHealth);
-        document.getElementById('s-love').innerText = Math.min(100, sLove);
-        document.getElementById('s-study').innerText = Math.min(100, sStudy);
-        document.getElementById('s-total').innerText = avgScore;
-        document.getElementById('total-points').innerText = totalPoints;
-        document.getElementById('advice-jp').innerText = data.advice;
-        document.getElementById('l-item').innerText = items[Math.floor(Math.random() * items.length)];
-        document.getElementById('l-color').innerText = colors[Math.floor(Math.random() * colors.length)];
+        // 表示反映
+        document.getElementById('welcome-view').style.display = 'none';
+        document.getElementById('result-view').style.display = 'block';
+        
+        document.body.style.backgroundColor = color.code; // 背景色変更
+        document.getElementById('res-luck').innerText = luck;
+        document.getElementById('res-img').src = `${data.imgs[0]}?sig=${Math.random()}`;
+        document.getElementById('res-love').innerText = love;
+        document.getElementById('res-study').innerText = study;
+        document.getElementById('res-health').innerText = health;
+        document.getElementById('res-total').innerText = total;
+        document.getElementById('res-comment').innerText = comment;
+        document.getElementById('res-color-name').innerText = color.name;
+        document.getElementById('res-item').innerText = item;
 
-        // 表示切り替え
-        card.classList.remove('shaking');
-        setupView.style.display = 'none';
-        resultView.style.display = 'block';
-        btn.innerText = "もう一度引く";
-        btn.disabled = false;
+        // 履歴保存
+        saveToHistory({ luck, total, color: color.name, item });
     }
+
+    // --- 履歴管理機能 ---
+    function saveToHistory(record) {
+        let history = JSON.parse(localStorage.getItem('fortuneHistory')) || [];
+        history.unshift(record); // 先頭に追加
+        if (history.length > 5) history.pop(); // 5件制限
+        localStorage.setItem('fortuneHistory', JSON.stringify(history));
+        displayHistory();
+    }
+
+    function displayHistory() {
+        const history = JSON.parse(localStorage.getItem('fortuneHistory')) || [];
+        const list = document.getElementById('history-list');
+        if (history.length === 0) {
+            list.innerHTML = "履歴はまだありません";
+            return;
+        }
+        list.innerHTML = history.map(h => `
+            <div class="history-item">
+                <span><strong>${h.luck}</strong> (${h.total}pt)</span>
+                <span style="font-size:0.7rem;">🎨${h.color} / 💎${h.item}</span>
+            </div>
+        `).join('');
+    }
+
+    function clearHistory() {
+        localStorage.removeItem('fortuneHistory');
+        displayHistory();
+    }
+
+    // 初回読み込み時に履歴を表示
+    displayHistory();
 </script>
 
 </body>
