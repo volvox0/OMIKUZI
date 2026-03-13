@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>究極・おみくじアプリ</title>
+    <style>
+        :root {
+            --primary-bg: #FF3CAC;
+            --gradient: linear-gradient(225deg, #FF3CAC 0%, #784BA0 50%, #2B86C5 100%);
+            --highlight: #FFFF00;
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            background: var(--gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: #333;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            width: 90%;
+            max-width: 450px;
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* アニメーション：おみくじを引く時の揺れ */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            100% { transform: translate(1px, 1px) rotate(0deg); }
+        }
+        .shaking { animation: shake 0.5s infinite; }
+
+        h1 { color: #E91E63; font-size: 1.8rem; margin-top: 0; }
+
+        /* 結果表示エリア */
+        #result { display: none; animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .luck-badge {
+            display: inline-block;
+            padding: 5px 20px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background-color: var(--highlight); /* 強調バックカラー */
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .human-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 15px;
+            border: 5px solid #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 運勢スコアボード */
+        .score-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .score-item {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .score-val { font-weight: bold; font-size: 1.2rem; color: #d32f2f; }
+        
+        .total-score {
+            font-size: 1.5rem;
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .advice-text {
+            background: #fff3e0;
+            padding: 15px;
+            border-left: 5px solid #ff9800;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .lucky-info {
+            display: flex;
+            justify-content: space-around;
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        button {
+            background: #E91E63;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #ad1457;
+            transition: 0.2s;
+            margin-top: 20px;
+        }
+        button:hover { background: #ff4081; transform: translateY(-2px); }
+        button:active { transform: translateY(3px); box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div class="card" id="main-card">
+    <h1>✨ 運勢診断 2026 ✨</h1>
+    
+    <div id="setup-view">
+        <p>あなたの今日の運命を<br>APIがリアルタイム解析します</p>
+        <div style="font-size: 5rem;">🔮</div>
+    </div>
+
+    <div id="result">
+        <img id="human-img" class="human-img" src="" alt="Fortune Face">
+        
+        <div><span class="luck-badge" id="luck-text">--</span></div>
+
+        <div class="score-container">
+            <div class="score-item">健康運 <div id="s-health" class="score-val">0</div></div>
+            <div class="score-item">恋愛運 <div id="s-love" class="score-val">0</div></div>
+            <div class="score-item">学業運 <div id="s-study" class="score-val">0</div></div>
+            <div class="score-item">総合レベル <div id="s-total" class="score-val">0</div></div>
+        </div>
+
+        <div class="total-score">累計点数: <span id="total-points">0</span> pt</div>
+
+        <div class="advice-text">
+            <strong>【総合アドバイス】</strong><br>
+            <span id="advice-jp">--</span>
+        </div>
+
+        <div class="lucky-info">
+            <span>🎨 <span id="l-color">--</span></span>
+            <span>💎 <span id="l-item">--</span></span>
+        </div>
+    </div>
+
+    <button id="draw-btn" onclick="startFortune()">運勢を読み込む</button>
+</div>
+
+<script>
+    // 1. データ定義（日本語化・具体的表現）
+    const fortuneData = {
+        "大吉": { bright: 1, advice: "今日は最高の一日になります。迷わず進めば道は開けます！", range: [85, 100] },
+        "吉":   { bright: 0.8, advice: "着実に物事が進みます。周囲への感謝を忘れずに。", range: [70, 84] },
+        "中吉": { bright: 0.7, advice: "適度な休息が運気を呼び込みます。自分を労わって。", range: [60, 69] },
+        "小吉": { bright: 0.5, advice: "小さな幸運が重なります。落とし物にだけは注意。", range: [40, 59] },
+        "末吉": { bright: 0.4, advice: "一歩ずつ進むのが吉。焦りは禁物です。", range: [20, 39] },
+        "凶":   { bright: 0.2, advice: "無理は禁物。今日は家でゆっくりPCをいじるのが正解かも。", range: [0, 19] }
+    };
+
+    // 具体的表現のみのリスト
+    const items = ["有線マウス", "黒のノートPC", "青色の水筒", "ゲーミングチェア", "USBメモリ", "500円玉"];
+    const colors = ["ネオンブルー", "燃えるような赤", "鮮やかな黄色", "深緑", "漆黒", "純白"];
+
+    async function startFortune() {
+        const btn = document.getElementById('draw-btn');
+        const card = document.getElementById('main-card');
+        const resultView = document.getElementById('result');
+        const setupView = document.getElementById('setup-view');
+
+        // アニメーション開始
+        btn.disabled = true;
+        card.classList.add('shaking');
+        setupView.innerHTML = "<p>データを照合中...</p><div style='font-size: 5rem;'>⚙️</div>";
+
+        // 2. 擬似API連携（3秒待機してAPIから取得した風に見せる）
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // 3. 抽選ロジック
+        const luckKeys = Object.keys(fortuneData);
+        const luck = luckKeys[Math.floor(Math.random() * luckKeys.length)];
+        const data = fortuneData[luck];
+
+        // 4. 個別スコア計算（各カテゴリ 10-100）
+        const sHealth = Math.floor(Math.random() * 40) + data.range[0];
+        const sLove = Math.floor(Math.random() * 40) + data.range[0];
+        const sStudy = Math.floor(Math.random() * 40) + data.range[0];
+        const totalPoints = sHealth + sLove + sStudy;
+        const avgScore = Math.floor(totalPoints / 3);
+
+        // 5. 画像API連携 (Unsplashから「明るい人」「暗い人」をキーワードで取得)
+        const keyword = data.bright > 0.6 ? "happy-person" : "serious-person";
+        const imgUrl = `https://source.unsplash.com/featured/?${keyword}&${Math.random()}`;
+        // ※2026年時点でSource Unsplashが不安定な場合、別の固定URL or APIに差し替え
+        document.getElementById('human-img').src = `https://picsum.photos/seed/${Math.random()}/400/300?grayscale=${data.bright < 0.4 ? 1 : 0}`;
+
+        // 6. 画面反映
+        document.getElementById('luck-text').innerText = luck;
+        document.getElementById('s-health').innerText = Math.min(100, sHealth);
+        document.getElementById('s-love').innerText = Math.min(100, sLove);
+        document.getElementById('s-study').innerText = Math.min(100, sStudy);
+        document.getElementById('s-total').innerText = avgScore;
+        document.getElementById('total-points').innerText = totalPoints;
+        document.getElementById('advice-jp').innerText = data.advice;
+        document.getElementById('l-item').innerText = items[Math.floor(Math.random() * items.length)];
+        document.getElementById('l-color').innerText = colors[Math.floor(Math.random() * colors.length)];
+
+        // 表示切り替え
+        card.classList.remove('shaking');
+        setupView.style.display = 'none';
+        resultView.style.display = 'block';
+        btn.innerText = "もう一度引く";
+        btn.disabled = false;
+    }
+</script>
+
+</body>
+</html>
