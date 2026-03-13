@@ -19,7 +19,6 @@
             --bg-color: #0a0a0a;
             --accent-color: #00f2ff;
             --card-bg: rgba(20, 20, 20, 0.85);
-            --text-glow: 0 0 10px rgba(0, 242, 255, 0.8);
         }
 
         body {
@@ -58,7 +57,6 @@
             overflow: hidden;
         }
 
-        /* スキャナー演出 */
         .scanner {
             position: absolute;
             top: -100%; left: 0; width: 100%; height: 10%;
@@ -113,8 +111,9 @@
         @keyframes gradientBtn { 0% { background-position: 0%; } 50% { background-position: 100%; } 100% { background-position: 0%; } }
 
         #result-view { display: none; }
-        .history-card { margin-top: 30px; background: rgba(0,0,0,0.5); border-radius: 25px; padding: 20px; width: 100%; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; }
+        .history-card { margin-top: 30px; background: rgba(0,0,0,0.5); border-radius: 25px; padding: 20px; width: 100%; box-sizing: border-box; }
+        .history-list { max-height: 200px; overflow-y: auto; text-align: left; }
+        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -130,9 +129,7 @@
         </div>
 
         <div id="result-view">
-            <div class="image-container">
-                <img id="res-img" class="fortune-img" src="" alt="fortune">
-            </div>
+            <div class="image-container"><img id="res-img" class="fortune-img" src=""></div>
             <span id="res-luck" class="luck-badge">--</span>
             <div class="score-grid">
                 <div class="score-card"><div style="font-size:0.6rem;">LOVE</div><div id="res-love" class="score-num">0</div></div>
@@ -143,6 +140,9 @@
                 TOTAL: <span id="res-total">0</span> PT
             </div>
             <div class="comment-box"><p id="res-comment" style="margin:0; font-size:0.9rem;">--</p></div>
+            <div style="margin-top:10px; font-size:0.8rem;">
+                Lucky Item: <span id="res-item" style="color:var(--accent-color);">--</span>
+            </div>
         </div>
 
         <button id="draw-btn" class="draw-btn" onclick="draw()">運命をスキャンする</button>
@@ -150,18 +150,24 @@
 
     <div class="history-card">
         <h3 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--accent-color);">[ SYSTEM LOG ]</h3>
-        <div id="history-list"><p style="color:#444; font-size:0.7rem;">履歴なし</p></div>
+        <div id="history-list" class="history-list">
+            <p style="color:#444; font-size:0.7rem;">履歴なし</p>
+        </div>
+        <button onclick="clearHistory()" style="background:none; border:none; color:#555; font-size:0.6rem; cursor:pointer; margin-top:10px;">LOG CLEAR</button>
     </div>
 </div>
 
 <script>
-    const UNSPLASH_ACCESS_KEY = 'YOUR_ACCESS_KEY'; // ここにキーを入れる
+    const UNSPLASH_ACCESS_KEY = 'YOUR_ACCESS_KEY'; // ここにキー
 
     const fortunes = {
         "大吉": { color: "#FFD700", keyword: "cyberpunk,party", comments: ["今日は神。何をやってもバズる一日になります！"] },
         "吉": { color: "#00FFCC", keyword: "future,city", comments: ["絶好調！放課後の寄り道にラッキーが。"] },
+        "中吉": { color: "#00BFFF", keyword: "tech,blue", comments: ["平和な一日。自分らしく過ごすのがベスト。"] },
         "凶": { color: "#555555", keyword: "glitch,dark", comments: ["今日は休業日。家でゆっくりしよう。"] }
     };
+
+    const studentItems = ["イヤホン", "エナドリ", "Apple Watch", "推しのアクスタ", "モバイルバッテリー"];
 
     async function draw() {
         const btn = document.getElementById('draw-btn');
@@ -174,8 +180,12 @@
         const luckKeys = Object.keys(fortunes);
         const luck = luckKeys[Math.floor(Math.random() * luckKeys.length)];
         const data = fortunes[luck];
+        const item = studentItems[Math.floor(Math.random() * studentItems.length)];
+        const love = Math.floor(Math.random()*101);
+        const study = Math.floor(Math.random()*101);
+        const health = Math.floor(Math.random()*101);
+        const total = love + study + health;
 
-        // 画像取得
         let imgUrl = `https://picsum.photos/seed/${Math.random()}/600/400`;
         if (UNSPLASH_ACCESS_KEY !== 'YOUR_ACCESS_KEY') {
             try {
@@ -193,20 +203,50 @@
             imgEl.onload = () => imgEl.classList.add('img-loaded');
 
             document.getElementById('res-luck').innerText = luck;
-            document.getElementById('res-luck').style.boxShadow = `0 0 40px ${data.color}`;
-            document.getElementById('res-love').innerText = Math.floor(Math.random()*101);
-            document.getElementById('res-study').innerText = Math.floor(Math.random()*101);
-            document.getElementById('res-health').innerText = Math.floor(Math.random()*101);
-            document.getElementById('res-total').innerText = Math.floor(Math.random()*300);
+            document.getElementById('res-love').innerText = love;
+            document.getElementById('res-study').innerText = study;
+            document.getElementById('res-health').innerText = health;
+            document.getElementById('res-total').innerText = total;
             document.getElementById('res-comment').innerText = data.comments[0];
+            document.getElementById('res-item').innerText = item;
 
             if (luck === "大吉") confetti({ particleCount: 150, spread: 70 });
 
+            saveHistory({ luck, total, item }); // 履歴保存
+            
             card.classList.remove('scanning');
             btn.disabled = false;
             btn.innerText = "RE-SCAN DESTINY";
         }, 1500);
     }
+
+    function saveHistory(result) {
+        let history = JSON.parse(localStorage.getItem('fortune_logs_v3')) || [];
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        history.unshift({ ...result, time });
+        if (history.length > 10) history.pop();
+        localStorage.setItem('fortune_logs_v3', JSON.stringify(history));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem('fortune_logs_v3')) || [];
+        const list = document.getElementById('history-list');
+        if (history.length === 0) return;
+        list.innerHTML = history.map(h => `
+            <div class="history-item">
+                <span>[${h.time}] <strong>${h.luck}</strong></span>
+                <span>${h.total}PT / ${h.item}</span>
+            </div>
+        `).join('');
+    }
+
+    function clearHistory() {
+        localStorage.removeItem('fortune_logs_v3');
+        document.getElementById('history-list').innerHTML = '<p style="color:#444; font-size:0.7rem;">履歴なし</p>';
+    }
+
+    window.onload = renderHistory;
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
