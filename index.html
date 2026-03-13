@@ -13,49 +13,206 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
+    
     <style>
-        /* ここに以前のCSSを貼ってください */
-        :root { --bg-color: #0a0a0a; --accent-color: #00f2ff; --card-bg: rgba(20,20,20,0.85); }
-        body { font-family: sans-serif; background: var(--bg-color); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: var(--card-bg); padding: 40px; border-radius: 30px; text-align: center; border: 1px solid var(--accent-color); }
-        .draw-btn { background: var(--accent-color); color: black; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        :root {
+            --bg-color: #0a0a0a;
+            --accent-color: #00f2ff;
+            --card-bg: rgba(20, 20, 20, 0.85);
+            --text-glow: 0 0 10px rgba(0, 242, 255, 0.8);
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 1s ease;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .app-container { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; z-index: 10; }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            animation: floating 6s infinite ease-in-out;
+            overflow: hidden;
+        }
+
+        /* スキャナー演出 */
+        .scanner {
+            position: absolute;
+            top: -100%; left: 0; width: 100%; height: 10%;
+            background: linear-gradient(to bottom, transparent, var(--accent-color), transparent);
+            opacity: 0; pointer-events: none;
+        }
+        .scanning .scanner { animation: scan 1.5s infinite; opacity: 0.5; }
+        @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #fff, var(--accent-color), #fff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        .image-container {
+            width: 100%; height: 220px; border-radius: 25px; overflow: hidden;
+            margin-bottom: 20px; border: 2px solid var(--accent-color); background: #111;
+        }
+        .fortune-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s; }
+        .img-loaded { opacity: 1; }
+
+        .luck-badge {
+            font-size: 4.5rem; font-weight: 900; display: inline-block;
+            background: #fff; color: #000; padding: 5px 40px; border-radius: 20px;
+            margin: 15px 0; transform: skew(-10deg);
+        }
+
+        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+        .score-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .score-num { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); }
+
+        .comment-box {
+            margin: 25px 0; background: #000; color: #00f2ff; padding: 20px;
+            border-radius: 20px; border: 1px solid var(--accent-color); text-align: left; position: relative;
+        }
+        .comment-box::before {
+            content: "SYSTEM ADVICE"; position: absolute; top: -10px; left: 20px;
+            background: var(--accent-color); color: #000; font-size: 0.6rem; padding: 2px 8px; border-radius: 5px;
+        }
+
+        .draw-btn {
+            background: linear-gradient(45deg, #ff0055, #00f2ff, #7000ff);
+            background-size: 300%; animation: gradientBtn 4s ease infinite;
+            color: #fff; border: none; padding: 22px; font-size: 1.4rem; font-weight: 900;
+            border-radius: 50px; cursor: pointer; width: 100%; margin-top: 20px;
+        }
+        @keyframes gradientBtn { 0% { background-position: 0%; } 50% { background-position: 100%; } 100% { background-position: 0%; } }
+
+        #result-view { display: none; }
+        .history-card { margin-top: 30px; background: rgba(0,0,0,0.5); border-radius: 25px; padding: 20px; width: 100%; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <div class="card" id="main-card">
-            <h1>⚡️ CYBER FORTUNE 2026 ⚡️</h1>
-            <div id="welcome-view">
-                <div style="font-size: 5rem; margin: 20px;">🔮</div>
-            </div>
-            <div id="result-view" style="display:none;">
-                <h2 id="res-luck"></h2>
-                <p id="res-total"></p>
-            </div>
-            <button class="draw-btn" onclick="draw()">SCAN DESTINY</button>
+<div class="app-container">
+    <div class="card" id="main-card">
+        <div class="scanner"></div>
+        <h1 id="title-text">⚡️ CYBER FORTUNE 2026 ⚡️</h1>
+
+        <div id="welcome-view">
+            <div style="font-size: 7rem; margin: 30px 0;">🔮</div>
+            <p style="color: #888;">AIがあなたの学生生活をスキャンします...</p>
         </div>
+
+        <div id="result-view">
+            <div class="image-container">
+                <img id="res-img" class="fortune-img" src="" alt="fortune">
+            </div>
+            <span id="res-luck" class="luck-badge">--</span>
+            <div class="score-grid">
+                <div class="score-card"><div style="font-size:0.6rem;">LOVE</div><div id="res-love" class="score-num">0</div></div>
+                <div class="score-card"><div style="font-size:0.6rem;">STUDY</div><div id="res-study" class="score-num">0</div></div>
+                <div class="score-card"><div style="font-size:0.6rem;">HEALTH</div><div id="res-health" class="score-num">0</div></div>
+            </div>
+            <div id="total-banner" style="background:var(--accent-color); color:#000; font-weight:900; padding:10px; border-radius:10px;">
+                TOTAL: <span id="res-total">0</span> PT
+            </div>
+            <div class="comment-box"><p id="res-comment" style="margin:0; font-size:0.9rem;">--</p></div>
+        </div>
+
+        <button id="draw-btn" class="draw-btn" onclick="draw()">運命をスキャンする</button>
     </div>
 
-    <script>
-        // --- 運勢ロジック ---
-        function draw() {
-            const luck = Math.random() > 0.5 ? "大吉" : "吉";
-            document.getElementById('welcome-view').style.display = 'none';
-            document.getElementById('result-view').style.display = 'block';
-            document.getElementById('res-luck').innerText = luck;
-            if(luck === "大吉") confetti();
+    <div class="history-card">
+        <h3 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--accent-color);">[ SYSTEM LOG ]</h3>
+        <div id="history-list"><p style="color:#444; font-size:0.7rem;">履歴なし</p></div>
+    </div>
+</div>
+
+<script>
+    const UNSPLASH_ACCESS_KEY = 'YOUR_ACCESS_KEY'; // ここにキーを入れる
+
+    const fortunes = {
+        "大吉": { color: "#FFD700", keyword: "cyberpunk,party", comments: ["今日は神。何をやってもバズる一日になります！"] },
+        "吉": { color: "#00FFCC", keyword: "future,city", comments: ["絶好調！放課後の寄り道にラッキーが。"] },
+        "凶": { color: "#555555", keyword: "glitch,dark", comments: ["今日は休業日。家でゆっくりしよう。"] }
+    };
+
+    async function draw() {
+        const btn = document.getElementById('draw-btn');
+        const card = document.getElementById('main-card');
+        const imgEl = document.getElementById('res-img');
+        
+        btn.disabled = true;
+        card.classList.add('scanning');
+
+        const luckKeys = Object.keys(fortunes);
+        const luck = luckKeys[Math.floor(Math.random() * luckKeys.length)];
+        const data = fortunes[luck];
+
+        // 画像取得
+        let imgUrl = `https://picsum.photos/seed/${Math.random()}/600/400`;
+        if (UNSPLASH_ACCESS_KEY !== 'YOUR_ACCESS_KEY') {
+            try {
+                const res = await fetch(`https://api.unsplash.com/photos/random?query=${data.keyword}&client_id=${UNSPLASH_ACCESS_KEY}`);
+                const json = await res.json();
+                imgUrl = json.urls.regular;
+            } catch(e) {}
         }
 
-        // --- サービスワーカーの登録 (bodyの最後でOK) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('SW Registered!'))
-                    .catch(err => console.error('SW Failed:', err));
-            });
-        }
-    </script>
+        setTimeout(() => {
+            document.getElementById('welcome-view').style.display = 'none';
+            document.getElementById('result-view').style.display = 'block';
+            
+            imgEl.src = imgUrl;
+            imgEl.onload = () => imgEl.classList.add('img-loaded');
+
+            document.getElementById('res-luck').innerText = luck;
+            document.getElementById('res-luck').style.boxShadow = `0 0 40px ${data.color}`;
+            document.getElementById('res-love').innerText = Math.floor(Math.random()*101);
+            document.getElementById('res-study').innerText = Math.floor(Math.random()*101);
+            document.getElementById('res-health').innerText = Math.floor(Math.random()*101);
+            document.getElementById('res-total').innerText = Math.floor(Math.random()*300);
+            document.getElementById('res-comment').innerText = data.comments[0];
+
+            if (luck === "大吉") confetti({ particleCount: 150, spread: 70 });
+
+            card.classList.remove('scanning');
+            btn.disabled = false;
+            btn.innerText = "RE-SCAN DESTINY";
+        }, 1500);
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        });
+    }
+</script>
 </body>
 </html>
